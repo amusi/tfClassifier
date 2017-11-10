@@ -1,10 +1,12 @@
 # tfClassifier
 
+https://github.com/amusi/tfClassifier
+
 ## 使用教程
 
 查看图像分类信息
 
-- python classifier.py --image_file inception/street.jpg
+- python classifier.py --image_file Datasets/samples/street.jpg
 
 查看图像分类信息，并列出评分前５的分类信息
 

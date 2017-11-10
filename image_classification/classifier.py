@@ -31,6 +31,9 @@ to use this script to perform image recognition.
 https://tensorflow.org/tutorials/image_recognition/
 """
 
+# Modified by Fangjie Chen
+
+# 导入库
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -48,6 +51,7 @@ FLAGS = None
 
 current_dir_path = os.path.dirname(os.path.realpath(__file__))
 
+# 节点
 class NodeLookup(object):
   """Converts integer node ID's to human readable labels."""
 
@@ -112,7 +116,7 @@ class NodeLookup(object):
       return ''
     return self.node_lookup[node_id]
 
-
+# 创建计算图
 def create_graph():
   """Creates a graph from saved GraphDef file and returns a saver."""
   # Creates graph from saved graph_def.pb.
@@ -122,7 +126,7 @@ def create_graph():
     graph_def.ParseFromString(f.read())
     _ = tf.import_graph_def(graph_def, name='')
 
-
+#
 def run_inference_on_image(image):
   """Runs inference on an image.
 
@@ -164,11 +168,12 @@ def run_inference_on_image(image):
 
 
 def main(_):
+  # 设置待查询图像的绝对路径
   image = (FLAGS.image_file if FLAGS.image_file else
            os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
   run_inference_on_image(image)
 
-
+#　设置参数
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   # classify_image_graph_def.pb:
@@ -177,6 +182,8 @@ if __name__ == '__main__':
   #   Map from synset ID to a human readable string.
   # imagenet_2012_challenge_label_map_proto.pbtxt:
   #   Text representation of a protocol buffer mapping a label to synset ID.
+
+  # 设置模型路径
   parser.add_argument(
       '--model_dir',
       type=str,
@@ -187,12 +194,14 @@ if __name__ == '__main__':
       imagenet_2012_challenge_label_map_proto.pbtxt.\
       """
   )
+  # 添加待查询图像的绝对路径
   parser.add_argument(
       '--image_file',
       type=str,
       default='',
       help='Absolute path to image file.'
   )
+  # 预测前*预测值的结果
   parser.add_argument( 
       '--num_top_predictions',
       type=int,
