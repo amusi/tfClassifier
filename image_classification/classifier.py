@@ -47,25 +47,31 @@ import numpy as np
 
 import tensorflow as tf
 
+# ???
 FLAGS = None
 
 current_dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# 节点
+# 根据节点ID找到图像类别
 class NodeLookup(object):
   """Converts integer node ID's to human readable labels."""
 
+  # 初始化
   def __init__(self,
                label_lookup_path=None,
                uid_lookup_path=None):
+    # 设置模型(model)文件的绝对路径
     if not label_lookup_path:
       label_lookup_path = os.path.join(
           FLAGS.model_dir, 'imagenet_2012_challenge_label_map_proto.pbtxt')
+    # 设置匹配的分类信息文件的绝对路径(根据ID号查询图像分类的结果信息)
     if not uid_lookup_path:
       uid_lookup_path = os.path.join(
           FLAGS.model_dir, 'imagenet_synset_to_human_label_map.txt')
+    # 节点查询
     self.node_lookup = self.load(label_lookup_path, uid_lookup_path)
 
+  #
   def load(self, label_lookup_path, uid_lookup_path):
     """Loads a human readable English name for each softmax node.
 
@@ -126,7 +132,7 @@ def create_graph():
     graph_def.ParseFromString(f.read())
     _ = tf.import_graph_def(graph_def, name='')
 
-#
+#　运行tensorflow接口
 def run_inference_on_image(image):
   """Runs inference on an image.
 
@@ -136,13 +142,14 @@ def run_inference_on_image(image):
   Returns:
     Nothing
   """
+  # 判断图像文件是否存在
   if not tf.gfile.Exists(image):
     tf.logging.fatal('File does not exist %s', image)
   image_data = tf.gfile.FastGFile(image, 'rb').read()
 
   # Creates graph from saved GraphDef.
   create_graph()
-
+  # 运行会话(session),　此处使用with(Python上下文管理器)
   with tf.Session() as sess:
     # Some useful tensors:
     # 'softmax:0': A tensor containing the normalized prediction across
@@ -155,25 +162,29 @@ def run_inference_on_image(image):
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
     predictions = sess.run(softmax_tensor,
                            {'DecodeJpeg/contents:0': image_data})
+    # 序列化
     predictions = np.squeeze(predictions)
 
     # Creates node ID --> English string lookup.
     node_lookup = NodeLookup()
 
     top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
+
+    # 输出分类结果和分数(默认循环一次, 可设置输出前ｎ分数及其分类结果)
     for node_id in top_k:
       human_string = node_lookup.id_to_string(node_id)
       score = predictions[node_id]
       print('%s (score = %.5f)' % (human_string, score))
 
-
+# 主函数入口
 def main(_):
   # 设置待查询图像的绝对路径
   image = (FLAGS.image_file if FLAGS.image_file else
            os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
+  # 运行tensorflow接口
   run_inference_on_image(image)
 
-#　设置参数
+#　命令行——设置参数
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   # classify_image_graph_def.pb:
@@ -183,7 +194,7 @@ if __name__ == '__main__':
   # imagenet_2012_challenge_label_map_proto.pbtxt:
   #   Text representation of a protocol buffer mapping a label to synset ID.
 
-  # 设置模型路径
+  # 设置模型(model)文件的绝对路径
   parser.add_argument(
       '--model_dir',
       type=str,
@@ -194,14 +205,14 @@ if __name__ == '__main__':
       imagenet_2012_challenge_label_map_proto.pbtxt.\
       """
   )
-  # 添加待查询图像的绝对路径
+  # 设置待查询图像的绝对路径
   parser.add_argument(
       '--image_file',
       type=str,
       default='',
       help='Absolute path to image file.'
   )
-  # 预测前*预测值的结果
+  # (可选)设置预测前*预测值的结果
   parser.add_argument( 
       '--num_top_predictions',
       type=int,
@@ -209,4 +220,5 @@ if __name__ == '__main__':
       help='Display this many predictions.'
   )
   FLAGS, unparsed = parser.parse_known_args()
+  # 运行tensorflow, 开始进行分类处理
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
